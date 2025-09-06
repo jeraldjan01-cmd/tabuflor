@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="tl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Judging System</title>
+    <style>
+        /* General styling para sa buong page */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            background-color: #f0f2f5;
+            color: #333;
+        }
+        .header {
+            background-color: #007bff;
+            color: white;
+            padding: 15px 20px;
+            text-align: center;
+            display: none; /* Initially hidden */
+        }
+        .nav-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .nav-buttons button {
+            width: auto;
+            padding: 10px 20px;
+            border-radius: 20px;
+            background-color: rgba(255, 255, 255, 0.2);
+            font-weight: normal;
+        }
+        .nav-buttons button.active {
+            background-color: white;
+            color: #007bff;
+        }
+        .main-content {
+            padding: 20px;
+        }
+        .page {
+            display: none;
+            max-width: 1200px;
+            margin: auto;
+            gap: 20px;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        }
+        .page.active {
+            display: grid;
+        }
+        .panel {
+            background: #fff;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        h1, h2, h3 {
+            color: #007bff;
+            border-bottom: 2px solid #e9ecef;
+            padding-bottom: 10px;
+            margin-top: 0;
+        }
+        label {
+            display: block;
+            margin-top: 15px;
+            font-weight: bold;
+            color: #555;
+        }
+        input[type="number"], input[type="text"], input[type="password"], select {
+            width: 100%;
+            padding: 10px;
+            margin-top: 5px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-size: 16px;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            margin-top: 20px;
+            border: none;
+            border-radius: 6px;
+            background-color: #007bff;
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        #criteria-setup, #contestant-setup {
+            background-color: #ffeeba;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+            color: #333;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .message-box {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #28a745;
+            color: white;
+            padding: 15px 30px;
+            border-radius: 25px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+        .message-box.show {
+            opacity: 1;
+        }
+        /* Modal (Pop-up) Styling */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.4);
+            justify-content: center;
+            align-items: center;
+        }
+        .modal.active {
+            display: flex;
+        }
+        .modal-content {
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+        }
+        .hidden {
+            display: none;
+        }
+        .role-selection {
+            display: grid;
+            gap: 20px;
+            max-width: 600px;
+            margin: auto;
+            text-align: center;
+            padding-top: 10vh;
+        }
+        .role-selection .btn-role {
+            padding: 20px;
+            font-size: 20px;
+            background-color: #007bff;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Role Selection Page -->
+    <div id="role-selection-page" class="page active">
+        <div class="role-selection">
+            <h1>Welcome to Judging System</h1>
+            <p>Piliin ang iyong papel para makapagpatuloy.</p>
+            <button class="btn-role" onclick="showAdminLoginModal()">Admin Setup</button>
+            <button class="btn-role" onclick="showPage('judging-page')">Judging Panel</button>
+            <button class="btn-role" onclick="showPage('tabulator-page')">Tabulator</button>
+        </div>
+    </div>
+
+    <!-- Main Content after Role Selection -->
+    <div class="header">
+        <h1>Judging System</h1>
+        <div class="nav-buttons">
+            <button id="nav-setup" onclick="showPage('setup-page')">Setup</button>
+            <button id="nav-judging" onclick="showPage('judging-page')">Judging</button>
+            <button id="nav-tabulator" onclick="showPage('tabulator-page')">Tabulator</button>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <!-- Page para sa Customization ng Criteria at Contestants (Admin-Only) -->
+        <div id="setup-page" class="page">
+            <div class="panel" id="criteria-setup">
+                <h2>Customization ng Criteria</h2>
+                <p>I-type ang mga criteria at ang kanilang maximum na puntos dito. Pindutin ang "I-update ang Forms" para mailapat sa mga forms ng judges.</p>
+                <div id="criteria-list">
+                    <!-- Sample criteria. User can add more. -->
+                    <div>
+                        <label>Criteria 1:</label>
+                        <input type="text" value="Ganda ng Boses">
+                        <label>Max Puntos:</label>
+                        <input type="number" value="50" min="1">
+                    </div>
+                    <div>
+                        <label>Criteria 2:</label>
+                        <input type="text" value="Stage Presence">
+                        <label>Max Puntos:</label>
+                        <input type="number" value="30" min="1">
+                    </div>
+                    <div>
+                        <label>Criteria 3:</label>
+                        <input type="text" value="Kasuotan">
+                        <label>Max Puntos:</label>
+                        <input type="number" value="20" min="1">
+                    </div>
+                </div>
+                <button onclick="addCriteria()">Magdagdag ng Criteria</button>
+                <button onclick="updateForms()">I-update ang Forms</button>
+            </div>
+
+            <!-- Bagong panel para sa pag-set up ng pangalan ng Judges -->
+            <div class="panel" id="judge-setup">
+                <h2>I-set Up ang Pangalan ng mga Judge</h2>
+                <p>Palitan ang default na pangalan ng mga judge dito.</p>
+                <div>
+                    <label>Judge 1 Pangalan:</label>
+                    <input type="text" id="judge1-name-input" value="Judge 1">
+                    <label>Judge 2 Pangalan:</label>
+                    <input type="text" id="judge2-name-input" value="Judge 2">
+                    <label>Judge 3 Pangalan:</label>
+                    <input type="text" id="judge3-name-input" value="Judge 3">
+                </div>
+                <button onclick="updateJudgeNames()">I-update ang Pangalan ng mga Judge</button>
+            </div>
+            
+            <div class="panel" id="contestant-setup">
+                <h2>I-set Up ang mga Contestant</h2>
+                <p>Ilagay ang mga pangalan ng contestants na sasali.</p>
+                <label for="new-contestant-name">Pangalan ng Contestant:</label>
+                <input type="text" id="new-contestant-name" placeholder="Pangalan ng Contestant">
+                <button onclick="addContestant()">Idagdag ang Contestant</button>
+                
+                <h3>Kasalukuyang Contestants:</h3>
+                <ul id="contestant-list"></ul>
+            </div>
+        </div>
+
+        <!-- Page para sa Judges -->
+        <div id="judging-page" class="page">
+            <div class="panel">
+                <h2>Judging Forms</h2>
+                <p>Piliin ang iyong panel upang mag-log-in at magsimulang mag-score.</p>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    <button style="flex: 1;" onclick="showJudgeLoginModal(0)" id="judge1-button">Judge 1</button>
+                    <button style="flex: 1;" onclick="showJudgeLoginModal(1)" id="judge2-button">Judge 2</button>
+                    <button style="flex: 1;" onclick="showJudgeLoginModal(2)" id="judge3-button">Judge 3</button>
+                </div>
+
+                <div id="judge-forms-container">
+                    <!-- Judge 1 Form -->
+                    <div id="judge1-form-panel" class="panel hidden">
+                        <h2 id="judge1-name-display">Judge 1 Scoring</h2>
+                        <form id="judge1-form">
+                            <h3 id="current-contestant-j1"></h3>
+                            <div id="criteria-inputs-j1"></div>
+                            <div style="display: flex; gap: 10px;">
+                                <button type="button" onclick="previousContestant(0)">Nakaraang Contestant</button>
+                                <button type="submit">I-submit at Next</button>
+                            </div>
+                        </form>
+                    </div>
+                    
+                    <!-- Judge 2 Form -->
+                    <div id="judge2-form-panel" class="panel hidden">
+                        <h2 id="judge2-name-display">Judge 2 Scoring</h2>
+                        <form id="judge2-form">
+                            <h3 id="current-contestant-j2"></h3>
+                            <div id="criteria-inputs-j2"></div>
+                            <div style="display: flex; gap: 10px;">
+                                <button type="button" onclick="previousContestant(1)">Nakaraang Contestant</button>
+                                <button type="submit">I-submit at Next</button>
+                            </div>
+                        </form>
+                    </div>
+                    
+                    <!-- Judge 3 Form -->
+                    <div id="judge3-form-panel" class="panel hidden">
+                        <h2 id="judge3-name-display">Judge 3 Scoring</h2>
+                        <form id="judge3-form">
+                            <h3 id="current-contestant-j3"></h3>
+                            <div id="criteria-inputs-j3"></div>
+                            <div style="display: flex; gap: 10px;">
+                                <button type="button" onclick="previousContestant(2)">Nakaraang Contestant</button>
+                                <button type="submit">I-submit at Next</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Page para sa Tabulator -->
+        <div id="tabulator-page" class="page">
+            <div id="tabulator-login-panel" class="panel">
+                <h2>Tabulator Access</h2>
+                <p>I-enter ang tabulator password para makita ang resulta.</p>
+                <label for="tabulator-password">Password:</label>
+                <input type="password" id="tabulator-password" required>
+                <button onclick="tabulatorLogin()">Tingnan ang Resulta</button>
+            </div>
+            
+            <div id="tabulator-results-panel" class="panel hidden">
+                <h2>Tabulator</h2>
+                <p>Ito ang magiging resulta ng kabuuang puntos. Ang mga contestant ay naka-rank ayon sa kanilang kabuuang iskor.</p>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Rank</th>
+                            <th>Contestant</th>
+                            <th>Kabuuang Puntos</th>
+                        </tr>
+                    </thead>
+                    <tbody id="results-table">
+                        <!-- Ang mga resulta ay lalabas dito pagkatapos mag-submit ng puntos. -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+    
+    <!-- Admin Login Modal -->
+    <div id="admin-login-modal" class="modal">
+        <div class="modal-content">
+            <h2>Admin Login</h2>
+            <p>Para ma-access ang setup, ilagay ang admin password.</p>
+            <label for="admin-password">Password:</label>
+            <input type="password" id="admin-password" placeholder="Admin Password" required>
+            <button onclick="login()">Login</button>
+        </div>
+    </div>
+
+    <!-- Judge Login Modals -->
+    <div id="judge1-login-modal" class="modal">
+        <div class="modal-content">
+            <h2 id="judge1-modal-title">Judge 1 Login</h2>
+            <label for="judge1-modal-password">Password:</label>
+            <input type="password" id="judge1-modal-password" required>
+            <button onclick="judgeLogin(0)">Login</button>
+        </div>
+    </div>
+    
+    <div id="judge2-login-modal" class="modal">
+        <div class="modal-content">
+            <h2 id="judge2-modal-title">Judge 2 Login</h2>
+            <label for="judge2-modal-password">Password:</label>
+            <input type="password" id="judge2-modal-password" required>
+            <button onclick="judgeLogin(1)">Login</button>
+        </div>
+    </div>
+    
+    <div id="judge3-login-modal" class="modal">
+        <div class="modal-content">
+            <h2 id="judge3-modal-title">Judge 3 Login</h2>
+            <label for="judge3-modal-password">Password:</label>
+            <input type="password" id="judge3-modal-password" required>
+            <button onclick="judgeLogin(2)">Login</button>
+        </div>
+    </div>
+
+    <!-- Notification box -->
+    <div id="message-box" class="message-box"></div>
+
+    <script>
+        // Global variables at constants
+        const ADMIN_PASSWORD = "@dmin2025";
+        const JUDGE_PASSWORDS = ["judge1pass", "judge2pass", "judge3pass"];
+        const TABULATOR_PASSWORD = "tabulatorpass";
+        
+        let judgeNames = ["Judge 1", "Judge 2", "Judge 3"];
+        const allResults = {};
+        const judgeForms = ['judge1-form', 'judge2-form', 'judge3-form'];
+        const contestants = [];
+        const currentContestantIndex = [0, 0, 0];
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // Walang aksyon sa simula, maghihintay ng user input
+        });
+
+        /**
+         * Ipinapakita ang modal para sa admin login.
+         */
+        function showAdminLoginModal() {
+            document.getElementById('admin-login-modal').classList.add('active');
+        }
+
+        /**
+         * Nagche-check ng password para sa admin access.
+         */
+        function login() {
+            const passwordInput = document.getElementById('admin-password').value;
+            if (passwordInput === ADMIN_PASSWORD) {
+                showMessage("Login Successful!");
+                document.getElementById('admin-login-modal').classList.remove('active');
+                showPage('setup-page');
+            } else {
+                showMessage("Mali ang password!");
+            }
+        }
+        
+        /**
+         * Nagche-check ng password para sa tabulator access.
+         */
+        function tabulatorLogin() {
+            const passwordInput = document.getElementById('tabulator-password').value;
+            if (passwordInput === TABULATOR_PASSWORD) {
+                showMessage("Tabulator Access Granted!");
+                document.getElementById('tabulator-login-panel').classList.add('hidden');
+                document.getElementById('tabulator-results-panel').classList.remove('hidden');
+            } else {
+                showMessage("Mali ang password!");
+            }
+        }
+
+        /**
+         * Nagpapakita ng modal para sa login ng judge.
+         */
+        function showJudgeLoginModal(judgeIndex) {
+            // Update modal title with custom judge name
+            document.getElementById(`judge${judgeIndex + 1}-modal-title`).textContent = `${judgeNames[judgeIndex]} Login`;
+            document.getElementById(`judge${judgeIndex + 1}-login-modal`).classList.add('active');
+        }
+
+        /**
+         * Nagche-check ng password at nagpapakita ng form ng judge.
+         */
+        function judgeLogin(judgeIndex) {
+            const passwordInput = document.getElementById(`judge${judgeIndex + 1}-modal-password`).value;
+            if (passwordInput === JUDGE_PASSWORDS[judgeIndex]) {
+                showMessage(`${judgeNames[judgeIndex]} Login Successful!`);
+                document.getElementById(`judge${judgeIndex + 1}-login-modal`).classList.remove('active');
+                
+                // Itago ang lahat ng judge form panels at ipakita ang tamang panel
+                document.querySelectorAll('#judge-forms-container .panel').forEach(panel => panel.classList.add('hidden'));
+                document.getElementById(`judge${judgeIndex + 1}-form-panel`).classList.remove('hidden');
+
+                // Ipakita ang unang contestant sa pag-login
+                updateContestantDisplay(judgeIndex);
+            } else {
+                showMessage("Maling password!");
+            }
+        }
+
+        /**
+         * Kinukuha ang mga criteria mula sa customization panel.
+         */
+        function getCriteria() {
+            const criteriaList = document.querySelectorAll('#criteria-list > div');
+            const criteria = [];
+            criteriaList.forEach(item => {
+                const nameInput = item.querySelector('input[type="text"]');
+                const maxPointsInput = item.querySelector('input[type="number"]');
+                criteria.push({
+                    name: nameInput.value,
+                    maxPoints: parseInt(maxPointsInput.value)
+                });
+            });
+            return criteria;
+        }
+
+        /**
+         * Nagdaragdag ng isang bagong set ng input fields para sa criteria.
+         */
+        function addCriteria() {
+            const criteriaList = document.getElementById('criteria-list');
+            const newDiv = document.createElement('div');
+            
+            newDiv.innerHTML = `
+                <label>Bagong Criteria:</label>
+                <input type="text" value="Bagong Criteria">
+                <label>Max Puntos:</label>
+                <input type="number" value="10" min="1">
+            `;
+            criteriaList.appendChild(newDiv);
+        }
+
+        /**
+         * Nagdaragdag ng contestant sa listahan at ina-update ang UI.
+         */
+        function addContestant() {
+            const contestantNameInput = document.getElementById('new-contestant-name');
+            const name = contestantNameInput.value.trim();
+            if (name && !contestants.includes(name)) {
+                contestants.push(name);
+                contestantNameInput.value = '';
+                updateContestantList();
+                showMessage(`${name} ay naidagdag na!`);
+            } else {
+                showMessage("Paki-lagay ang wastong pangalan.");
+            }
+        }
+
+        /**
+         * Ina-update ang listahan ng contestants sa UI.
+         */
+        function updateContestantList() {
+            const list = document.getElementById('contestant-list');
+            list.innerHTML = '';
+            contestants.forEach(name => {
+                const li = document.createElement('li');
+                li.textContent = name;
+                list.appendChild(li);
+            });
+        }
+
+        /**
+         * Ina-update ang pangalan ng mga judges at forms.
+         */
+        function updateJudgeNames() {
+            judgeNames[0] = document.getElementById('judge1-name-input').value || "Judge 1";
+            judgeNames[1] = document.getElementById('judge2-name-input').value || "Judge 2";
+            judgeNames[2] = document.getElementById('judge3-name-input').value || "Judge 3";
+            
+            // Update button texts
+            document.getElementById('judge1-button').textContent = judgeNames[0];
+            document.getElementById('judge2-button').textContent = judgeNames[1];
+            document.getElementById('judge3-button').textContent = judgeNames[2];
+
+            // Update panel titles
+            document.getElementById('judge1-name-display').textContent = `${judgeNames[0]} Scoring`;
+            document.getElementById('judge2-name-display').textContent = `${judgeNames[1]} Scoring`;
+            document.getElementById('judge3-name-display').textContent = `${judgeNames[2]} Scoring`;
+            
+            showMessage("Pangalan ng mga judge ay na-update na!");
+        }
+
+        /**
+         * Ina-update ang mga forms ng judges base sa mga customized na criteria.
+         */
+        function updateForms() {
+            const criteria = getCriteria();
+            judgeForms.forEach((formId, judgeIndex) => {
+                const form = document.getElementById(formId);
+                const inputsDiv = form.querySelector(`[id^="criteria-inputs-"]`);
+                inputsDiv.innerHTML = ''; // Nililinis ang mga nakaraang inputs.
+
+                criteria.forEach((crit, index) => {
+                    const label = document.createElement('label');
+                    label.textContent = `${crit.name} (Max: ${crit.maxPoints})`;
+                    
+                    const input = document.createElement('input');
+                    input.type = 'number';
+                    input.name = `criteria${index}`;
+                    input.min = "0";
+                    input.max = crit.maxPoints;
+                    input.placeholder = `I-enter ang puntos (0-${crit.maxPoints})`;
+                    input.required = true;
+
+                    inputsDiv.appendChild(label);
+                    inputsDiv.appendChild(input);
+                });
+                updateContestantDisplay(judgeIndex);
+            });
+            showMessage('Forms ay na-update na!');
+        }
+
+        /**
+         * Nagpapakita ng kasalukuyang contestant at nag-clear ng inputs.
+         */
+        function updateContestantDisplay(judgeIndex) {
+            const formPanel = document.getElementById(`judge${judgeIndex + 1}-form-panel`);
+            const contestantNameElement = formPanel.querySelector('h3');
+            const criteriaInputs = formPanel.querySelectorAll('input[type="number"]');
+
+            if (contestants.length === 0) {
+                contestantNameElement.textContent = "Walang Contestant na Naka-setup.";
+            } else {
+                const currentName = contestants[currentContestantIndex[judgeIndex]];
+                contestantNameElement.textContent = `${currentName} (Contestant ${currentContestantIndex[judgeIndex] + 1} of ${contestants.length})`;
+                criteriaInputs.forEach(input => input.value = ''); // Clear inputs
+            }
+        }
+
+        /**
+         * Nag-go sa nakaraang contestant.
+         */
+        function previousContestant(judgeIndex) {
+            if (currentContestantIndex[judgeIndex] > 0) {
+                currentContestantIndex[judgeIndex]--;
+                updateContestantDisplay(judgeIndex);
+            } else {
+                showMessage("Ito na ang unang contestant.");
+            }
+        }
+
+        /**
+         * Ina-update ang table ng tabulator sa bawat pag-submit ng puntos.
+         */
+        function updateTabulator() {
+            const resultsTable = document.getElementById('results-table');
+            resultsTable.innerHTML = '';
+
+            const sortedContestants = Object.keys(allResults).sort((a, b) => {
+                return allResults[b].total - allResults[a].total;
+            });
+
+            sortedContestants.forEach((contestantName, index) => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td>${contestantName}</td>
+                    <td>${allResults[contestantName].total}</td>
+                `;
+                resultsTable.appendChild(tr);
+            });
+        }
+        
+        // Naglalagay ng event listener para sa bawat form ng judge.
+        judgeForms.forEach((formId, judgeIndex) => {
+            const form = document.getElementById(formId);
+            form.addEventListener('submit', (e) => {
+                e.preventDefault();
+
+                if (contestants.length === 0) {
+                    showMessage("Walang contestants na naka-setup!");
+                    return;
+                }
+                
+                const contestantName = contestants[currentContestantIndex[judgeIndex]];
+                
+                let totalScorePerJudge = 0;
+                
+                const criteriaInputs = e.target.querySelectorAll('input[type="number"]');
+                criteriaInputs.forEach(input => {
+                    totalScorePerJudge += parseInt(input.value) || 0;
+                });
+
+                if (!allResults[contestantName]) {
+                    allResults[contestantName] = {
+                        scores: Array(judgeForms.length).fill(null),
+                        total: 0
+                    };
+                }
+
+                allResults[contestantName].scores[judgeIndex] = totalScorePerJudge;
+                allResults[contestantName].total = allResults[contestantName].scores.reduce((sum, score) => sum + (score || 0), 0);
+
+                updateTabulator();
+                showMessage(`Ang puntos ni ${contestantName} ay na-submit na ni ${judgeNames[judgeIndex]}!`);
+                
+                // Lumipat sa susunod na contestant
+                currentContestantIndex[judgeIndex]++;
+                if (currentContestantIndex[judgeIndex] >= contestants.length) {
+                    showMessage("Tapos na ang pag-judge! Maaari mo nang tingnan ang Tabulator.");
+                    currentContestantIndex[judgeIndex] = 0; // Bumalik sa simula
+                }
+                updateContestantDisplay(judgeIndex);
+            });
+        });
+
+        /**
+         * Nagpapakita ng isang custom na mensahe sa screen.
+         */
+        function showMessage(message) {
+            const msgBox = document.getElementById('message-box');
+            msgBox.textContent = message;
+            msgBox.classList.add('show');
+            setTimeout(() => {
+                msgBox.classList.remove('show');
+            }, 3000);
+        }
+
+        /**
+         * Ipinapakita ang page base sa ID.
+         */
+        function showPage(pageId) {
+            // Itago ang role selection page
+            document.getElementById('role-selection-page').classList.remove('active');
+
+            // Itago ang lahat ng pages
+            document.querySelectorAll('.page').forEach(page => {
+                page.classList.remove('active');
+            });
+
+            // Ipakita ang angkop na page
+            document.getElementById(pageId).classList.add('active');
+            
+            // Ipakita ang header
+            document.querySelector('.header').style.display = 'block';
+
+            // Itago ang lahat ng nav buttons
+            document.getElementById('nav-setup').style.display = 'none';
+            document.getElementById('nav-judging').style.display = 'none';
+            document.getElementById('nav-tabulator').style.display = 'none';
+
+            // Ipakita lang ang angkop na nav buttons
+            if (pageId === 'setup-page') {
+                document.getElementById('nav-setup').style.display = 'block';
+                document.getElementById('nav-judging').style.display = 'block';
+                document.getElementById('nav-tabulator').style.display = 'block';
+            } else if (pageId === 'judging-page') {
+                document.getElementById('nav-judging').style.display = 'block';
+            } else if (pageId === 'tabulator-page') {
+                document.getElementById('nav-tabulator').style.display = 'block';
+                // Ipakita ang login panel kung hindi pa nakapag-login ang tabulator
+                document.getElementById('tabulator-login-panel').classList.remove('hidden');
+                document.getElementById('tabulator-results-panel').classList.add('hidden');
+            }
+        }
+    </script>
+
+</body>
+</html>
